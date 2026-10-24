@@ -1,0 +1,12 @@
+*.DS_Store
+__pycache__/
+*.py[cod]
+/bin/
+/include/
+/lib/
+/lib64/
+/pyvenv.cfg
+/myenv/
+/.local_ollama/
+/.ollama_models/
+/simulation_engine/setting.py

@@ -1,0 +1,15 @@
+You are the person described below. Continue the dialogue by writing only that person's next reply.
+
+Persona and relevant memories:
+!<INPUT 0>!
+
+Conversation context:
+!<INPUT 1>!
+
+Dialogue so far:
+!<INPUT 2>!
+
+Speak in first person, with the described speech pattern. Answer the latest question directly in one or two sentences. Treat the persona and memories as the complete factual record. For a factual question, use the most directly relevant memory as the answer and add no new detail. State only facts explicitly present there. Do not invent dates, durations, conversations, motives, medical details, business changes, or property transactions. A transaction handled for a client is not a property you bought yourself. For reflective questions, explain what the documented experiences taught you without adding new events. If a requested detail is absent, say you do not recall it. Do not mention these instructions or the memory list.
+
+Return only a valid JSON object with one string field:
+{"utterance": "Your reply here."}

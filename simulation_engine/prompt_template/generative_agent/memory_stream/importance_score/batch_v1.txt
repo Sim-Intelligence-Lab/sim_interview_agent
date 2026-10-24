@@ -1,0 +1,5 @@
+!<INPUT 0>!
+
+Score each numbered observation above by how important it would be to a person's long-term memory. Routine, easily forgotten events should score from 0 to 15. Major life events, enduring relationships, or defining beliefs should score from 70 to 100. Use the middle of the range for events in between. Judge importance, not how interesting the wording is.
+
+Return only a valid JSON object. Include exactly one integer entry from 0 to 100 per observation, in input order, with keys "Item 1", "Item 2", and so on. Choose each score independently; do not use a fixed default.
