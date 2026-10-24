@@ -1,4 +1,4 @@
-"""Local web interview UI for the SyntheticCS222 generative agents."""
+"""Interview Studio: a local web UI for interviewing generative agents."""
 
 import csv
 import io
@@ -11,33 +11,33 @@ from pathlib import Path
 
 from flask import Flask, abort, jsonify, render_template, request, send_file, url_for
 
-from cs222_assignment_1.questions.jasmine_carter_questions import (
-    factual_questions as jasmine_factual,
-    reflective_questions as jasmine_reflective,
+from questions.trang_thai import (
+    factual_questions as trang_factual,
+    reflective_questions as trang_reflective,
 )
-from cs222_assignment_1.questions.matthew_jacobs_questions import (
-    factual_questions as matthew_factual,
-    reflective_questions as matthew_reflective,
+from questions.raju_nekadi import (
+    factual_questions as raju_factual,
+    reflective_questions as raju_reflective,
 )
 from generative_agent.generative_agent import GenerativeAgent
-from simulation_engine.settings import MODEL_BACKEND, OPENAI_API_KEY
+from simulation_engine.settings import EMBEDDING_MODEL, LLM_VERS
 
 
 ROOT = Path(__file__).resolve().parent
-SESSION_DIR = ROOT / "cs222_assignment_1" / "report" / "interviews"
+SESSION_DIR = ROOT / "interviews"
 PEOPLE = {
-    "jasmine_carter": {
-        "name": "Jasmine Carter",
-        "population": "SyntheticCS222",
-        "factual": jasmine_factual,
-        "reflective": jasmine_reflective,
+    "trang_thai": {
+        "name": "Trang Thai",
+        "population": "interviewees",
+        "factual": trang_factual,
+        "reflective": trang_reflective,
         "intro": "Environmental advocate, organizer, and community leader.",
     },
-    "matthew_jacobs": {
-        "name": "Matthew Jacobs",
-        "population": "SyntheticCS222",
-        "factual": matthew_factual,
-        "reflective": matthew_reflective,
+    "raju_nekadi": {
+        "name": "Raju Nekadi",
+        "population": "interviewees",
+        "factual": raju_factual,
+        "reflective": raju_reflective,
         "intro": "Austin real estate agent, father, and local political advocate.",
     },
 }
@@ -117,6 +117,7 @@ def start_session():
         "status": "in_progress",
         "current_index": 0,
         "questions": questions,
+        "question_status": ["pending"] * len(questions),
         "answers": [],
     }
     _sessions[session_id] = session
@@ -124,27 +125,81 @@ def start_session():
     return jsonify({
         "session_id": session_id,
         "person_name": session["person_name"],
-        "question_count": len(questions),
-        "question_index": 0,
-        "question": questions[0],
         "questions": questions,
+        **_progress(session),
     })
+
+
+def _progress(session):
+    """Where the interview stands, sent back after every change."""
+    status = session["question_status"]
+    return {
+        "current_index": session["current_index"],
+        "question_status": status,
+        "answered_count": status.count("answered"),
+        "skipped_count": status.count("skipped"),
+        "question_count": len(status),
+        "complete": session["status"] == "complete",
+    }
+
+
+def _advance(session):
+    """Move to the next pending question after the current one, wrapping
+    around. If none are left, mark the interview complete."""
+    status = session["question_status"]
+    count = len(status)
+    for step in range(1, count + 1):
+        index = (session["current_index"] + step) % count
+        if status[index] == "pending":
+            session["current_index"] = index
+            return
+    session["status"] = "complete"
+    session["completed_at"] = datetime.now(timezone.utc).isoformat()
+
+
+def _question_index(session, data):
+    index = data.get("question_index", session["current_index"])
+    if not isinstance(index, int) or not 0 <= index < len(session["questions"]):
+        abort(400, description="Unknown question.")
+    return index
+
+
+@app.post("/api/sessions/<session_id>/select")
+def select_question(session_id):
+    """Jump to any question that hasn't been answered yet, including skipped ones."""
+    session = _get_session(session_id)
+    index = _question_index(session, request.get_json(silent=True) or {})
+    if session["question_status"][index] == "answered":
+        return jsonify(error="That question has already been answered."), 409
+    session["current_index"] = index
+    session["status"] = "in_progress"
+    _save_session(session)
+    return jsonify(_progress(session))
+
+
+@app.post("/api/sessions/<session_id>/skip")
+def skip_question(session_id):
+    session = _get_session(session_id)
+    if session["status"] == "complete":
+        return jsonify(error="This interview is already complete."), 409
+    session["question_status"][session["current_index"]] = "skipped"
+    _advance(session)
+    _save_session(session)
+    return jsonify(_progress(session))
 
 
 @app.post("/api/sessions/<session_id>/answer")
 def answer_question(session_id):
     session = _get_session(session_id)
-    if session["status"] == "complete":
-        return jsonify(error="This interview is already complete."), 409
-
-    question_index = session["current_index"]
+    question_index = _question_index(session, request.get_json(silent=True) or {})
+    if session["question_status"][question_index] == "answered":
+        return jsonify(error="That question has already been answered."), 409
+    session["current_index"] = question_index
     question = session["questions"][question_index]
     try:
         agent = _agent(session["person_id"])
-        retrieved = agent.memory_stream.retrieve(
-            [question["text"]], time_step=len(session["answers"]), n_count=5
-        )[question["text"]]
-        memory_notes = [node.content for node in retrieved]
+        memory_scores = agent.memory_stream.retrieve_with_scores(question["text"], n_count=5)
+        memory_notes = [memory["content"] for memory in memory_scores]
         evidence = "\n".join(f"- {memory}" for memory in memory_notes)
         if question["kind"] == "factual":
             guidance = (
@@ -166,8 +221,10 @@ def answer_question(session_id):
             raise RuntimeError("The agent returned an empty answer.")
     except Exception as exc:
         message = str(exc)
-        if MODEL_BACKEND == "openai" and not OPENAI_API_KEY:
-            message = "Set OPENAI_API_KEY (or configure a local backend) before asking questions."
+        if "Connection error" in message or "Connection refused" in message:
+            message = "Ollama is not running. Start it with `ollama serve` and try again."
+        elif "model" in message and "not found" in message:
+            message = f"Missing Ollama model. Run: ollama pull {LLM_VERS} && ollama pull {EMBEDDING_MODEL}"
         app.logger.exception("Interview answer generation failed")
         return jsonify(error=message), 503
 
@@ -177,28 +234,18 @@ def answer_question(session_id):
         "question": question["text"],
         "response": response.strip(),
         "supporting_memories": memory_notes,
+        "memory_scores": [
+            {key: round(value, 4) if isinstance(value, float) else value
+             for key, value in memory.items()}
+            for memory in memory_scores
+        ],
         "answered_at": datetime.now(timezone.utc).isoformat(),
     }
     session["answers"].append(answer)
-    session["current_index"] += 1
-    complete = session["current_index"] == len(session["questions"])
-    if complete:
-        session["status"] = "complete"
-        session["completed_at"] = datetime.now(timezone.utc).isoformat()
+    session["question_status"][question_index] = "answered"
+    _advance(session)
     _save_session(session)
-
-    next_question = (
-        session["questions"][session["current_index"]]
-        if not complete else None
-    )
-    return jsonify({
-        "answer": answer,
-        "complete": complete,
-        "answered_count": len(session["answers"]),
-        "question_count": len(session["questions"]),
-        "next_question_index": session["current_index"],
-        "next_question": next_question,
-    })
+    return jsonify({"answer": answer, **_progress(session)})
 
 
 @app.get("/api/sessions/<session_id>/download")
@@ -208,11 +255,13 @@ def download_session(session_id):
     if export_format == "csv":
         stream = io.StringIO(newline="")
         writer = csv.writer(stream)
-        writer.writerow(["subject", "question_type", "question", "response", "supporting_memories"])
+        writer.writerow(["subject", "question_type", "question", "response",
+                         "supporting_memories", "memory_scores"])
         for answer in session["answers"]:
+            scores = " | ".join(f"{m['score']:.2f}" for m in answer.get("memory_scores", []))
             writer.writerow([
                 session["person_name"], answer["kind"], answer["question"],
-                answer["response"], " | ".join(answer["supporting_memories"]),
+                answer["response"], " | ".join(answer["supporting_memories"]), scores,
             ])
         payload = io.BytesIO(stream.getvalue().encode("utf-8-sig"))
         return send_file(payload, mimetype="text/csv", as_attachment=True,
@@ -224,10 +273,11 @@ def download_session(session_id):
                      download_name=f"{session['person_id']}_{session_id}.json")
 
 
+@app.errorhandler(400)
 @app.errorhandler(404)
-def not_found(error):
+def api_error(error):
     if request.path.startswith("/api/"):
-        return jsonify(error=error.description), 404
+        return jsonify(error=error.description), error.code
     return error
 
 

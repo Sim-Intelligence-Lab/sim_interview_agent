@@ -8,17 +8,13 @@ from typing import List, Union
 
 from simulation_engine.settings import *
 
-openai.api_key = OPENAI_API_KEY
-
-
 def _client() -> openai.OpenAI:
-  if MODEL_BACKEND == "ollama":
-    return openai.OpenAI(base_url=OLLAMA_BASE_URL, api_key="ollama")
-  return openai.OpenAI(api_key=OPENAI_API_KEY)
+  # Ollama exposes an OpenAI-compatible API, so the openai client talks to it locally.
+  return openai.OpenAI(base_url=OLLAMA_BASE_URL, api_key="ollama")
 
 
 def _chat_model(model: str) -> str:
-  return LLM_VERS if MODEL_BACKEND == "ollama" else model
+  return LLM_VERS
 
 
 # ============================================================================
@@ -94,7 +90,7 @@ def gpt_request(prompt: str,
       model=_chat_model(model),
       messages=[{"role": "user", "content": prompt}],
       max_tokens=max_tokens,
-      temperature=0.2 if MODEL_BACKEND == "ollama" else 0.7
+      temperature=0.2
     )
     return response.choices[0].message.content
   except Exception as e:
@@ -122,7 +118,7 @@ def gpt_request_messages(messages: List[dict],
       model=_chat_model(model),
       messages=messages,
       max_tokens=max_tokens,
-      temperature=0.2 if MODEL_BACKEND == "ollama" else 0.7
+      temperature=0.2
     )
     return response.choices[0].message.content
   except Exception as e:

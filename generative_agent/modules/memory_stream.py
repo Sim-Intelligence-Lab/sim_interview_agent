@@ -219,24 +219,17 @@ class MemoryStream:
           curr_nodes += [curr_node]
 
     # <retrieved> is the main dictionary that we are returning
-    retrieved = dict() 
-    for focal_pt in focal_points: 
-      # Calculating the component dictionaries and normalizing them.
-      x = extract_recency(curr_nodes)
-      recency_out = normalize_dict_floats(x, 0, 1)
-      x = extract_importance(curr_nodes)
-      importance_out = normalize_dict_floats(x, 0, 1)  
-      x = extract_relevance(curr_nodes, self.embeddings, focal_pt)
-      relevance_out = normalize_dict_floats(x, 0, 1)
-      
-      # Computing the final scores that combines the component values. 
+    retrieved = dict()
+    for focal_pt in focal_points:
+      recency_out, relevance_out, importance_out, _ = self._component_scores(
+        curr_nodes, focal_pt)
+      recency_w, relevance_w, importance_w = hp
+
+      # Computing the final scores that combines the component values.
       master_out = dict()
-      for key in recency_out.keys(): 
-        recency_w = hp[0]
-        relevance_w = hp[1]
-        importance_w = hp[2]
+      for key in recency_out.keys():
         master_out[key] = (recency_w * recency_out[key]
-                         + relevance_w * relevance_out[key] 
+                         + relevance_w * relevance_out[key]
                          + importance_w * importance_out[key])
 
       if verbose: 
@@ -268,10 +261,46 @@ class MemoryStream:
         new_ret[key] = [i.content for i in val]
       append_to_json(record_json, new_ret)
 
-    return retrieved 
+    return retrieved
 
 
-  def _add_node(self, 
+  def _component_scores(self, curr_nodes: List[ConceptNode], focal_pt: str):
+    """Recency, relevance and importance per node (each normalized to 0-1),
+    plus the raw cosine similarity of each node to the focal point."""
+    recency = normalize_dict_floats(extract_recency(curr_nodes), 0, 1)
+    importance = normalize_dict_floats(extract_importance(curr_nodes), 0, 1)
+    similarity = extract_relevance(curr_nodes, self.embeddings, focal_pt)
+    relevance = normalize_dict_floats(dict(similarity), 0, 1)
+    return recency, relevance, importance, similarity
+
+
+  def retrieve_with_scores(self, focal_pt: str, n_count: int = 10,
+                           hp: List[float] = [0.5, 3, 0.5]
+                           ) -> List[Dict[str, Any]]:
+    """Like retrieve(), but for one focal point, and returns the score
+    breakdown of each retrieved memory, highest score first."""
+    recency, relevance, importance, similarity = self._component_scores(
+      self.seq_nodes, focal_pt)
+    recency_w, relevance_w, importance_w = hp
+    scored = []
+    for node in self.seq_nodes:
+      key = node.node_id
+      scored.append({
+        "content": node.content,
+        "score": (recency_w * recency[key] + relevance_w * relevance[key]
+                  + importance_w * importance[key]),
+        "max_score": recency_w + relevance_w + importance_w,
+        "relevance": relevance[key],
+        "importance": importance[key],
+        "recency": recency[key],
+        "similarity": float(similarity[key]),
+        "raw_importance": node.importance,
+      })
+    scored.sort(key=lambda item: item["score"], reverse=True)
+    return scored[:n_count]
+
+
+  def _add_node(self,
                 time_step: int, 
                 node_type: str, 
                 content: str, 

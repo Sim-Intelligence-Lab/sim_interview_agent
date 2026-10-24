@@ -10,4 +10,4 @@ __pycache__/
 /.local_ollama/
 /.ollama_models/
 /simulation_engine/setting.py
-/cs222_assignment_1/report/interviews/
+/interviews/
