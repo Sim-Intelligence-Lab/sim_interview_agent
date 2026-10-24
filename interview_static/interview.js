@@ -26,7 +26,9 @@ function renderPeople(people) {
     button.type = "button";
     button.className = "person-option";
     button.dataset.person = person.id;
-    button.innerHTML = `<span class="person-icon">${person.name.split(" ").map((part) => part[0]).join("")}</span><span class="person-info"><b></b><small></small></span><span class="person-arrow">↗</span>`;
+    button.innerHTML = '<img class="person-avatar" alt=""><span class="person-info"><b></b><small></small></span><span class="person-arrow">↗</span>';
+    button.querySelector(".person-avatar").src = person.avatar_url;
+    button.querySelector(".person-avatar").alt = `${person.name} illustrated avatar`;
     button.querySelector("b").textContent = person.name;
     button.querySelector("small").textContent = person.intro;
     button.addEventListener("click", () => {
@@ -65,9 +67,16 @@ function renderAnswer(result) {
   const question = document.createElement("p");
   question.className = "answer-question";
   question.textContent = result.answer.question;
-  const label = document.createElement("p");
-  label.className = "answer-label";
-  label.textContent = `${state.person.name} · RESPONSE`;
+  const label = document.createElement("div");
+  label.className = "answer-person";
+  const avatar = document.createElement("img");
+  avatar.className = "answer-avatar";
+  avatar.src = state.person.avatar_url;
+  avatar.alt = "";
+  const name = document.createElement("span");
+  name.className = "answer-label";
+  name.textContent = `${state.person.name} · RESPONSE`;
+  label.append(avatar, name);
   const text = document.createElement("p");
   text.className = "answer-text";
   text.textContent = result.answer.response;
@@ -123,6 +132,8 @@ async function startInterview() {
     state.index = 0;
     state.questions = [...session.questions];
     $("subject-name").textContent = session.person_name;
+    $("subject-avatar").src = state.person.avatar_url;
+    $("subject-avatar").alt = `${session.person_name} illustrated avatar`;
     $("subject-intro").textContent = state.person.intro;
     const list = $("question-list");
     list.replaceChildren();

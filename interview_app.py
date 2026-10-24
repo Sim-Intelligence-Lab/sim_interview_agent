@@ -9,7 +9,7 @@ import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
-from flask import Flask, abort, jsonify, render_template, request, send_file
+from flask import Flask, abort, jsonify, render_template, request, send_file, url_for
 
 from cs222_assignment_1.questions.jasmine_carter_questions import (
     factual_questions as jasmine_factual,
@@ -94,6 +94,7 @@ def people():
     return jsonify([
         {"id": person_id, "name": person["name"], "intro": person["intro"],
          "question_count": len(_questions(person_id)),
+         "avatar_url": url_for("static", filename=f"avatars/{person_id}.svg"),
          "questions": _questions(person_id)}
         for person_id, person in PEOPLE.items()
     ])
