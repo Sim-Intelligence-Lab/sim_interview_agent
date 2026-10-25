@@ -359,7 +359,8 @@ function renderAnswer(answer, { animate = false } = {}) {
   }
   $("answer-area").querySelector(".empty-state")?.remove();
   $("answer-area").append(bubble);
-  bubble.scrollIntoView({ behavior: "smooth", block: "start" });
+  // Scroll only the transcript, so the page (and Trang's portrait) stays put.
+  $("answer-area").scrollTo({ top: bubble.offsetTop - $("answer-area").offsetTop - 12, behavior: "smooth" });
   renderTrace(answer);
 }
 
