@@ -5,40 +5,31 @@ import io
 import json
 import os
 import tempfile
+import time
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
 from flask import Flask, abort, jsonify, render_template, request, send_file, url_for
 
-from questions.trang_thai import (
+from questions.trang import (
     factual_questions as trang_factual,
     reflective_questions as trang_reflective,
-)
-from questions.raju_nekadi import (
-    factual_questions as raju_factual,
-    reflective_questions as raju_reflective,
 )
 from generative_agent.generative_agent import GenerativeAgent
 from simulation_engine.settings import EMBEDDING_MODEL, LLM_VERS
 
 
 ROOT = Path(__file__).resolve().parent
+MEMORY_COUNT = 5  # memories retrieved, shown, and given to the model per question
 SESSION_DIR = ROOT / "interviews"
 PEOPLE = {
-    "trang_thai": {
-        "name": "Trang Thai",
+    "trang": {
+        "name": "Trang",
         "population": "interviewees",
         "factual": trang_factual,
         "reflective": trang_reflective,
-        "intro": "Environmental advocate, organizer, and community leader.",
-    },
-    "raju_nekadi": {
-        "name": "Raju Nekadi",
-        "population": "interviewees",
-        "factual": raju_factual,
-        "reflective": raju_reflective,
-        "intro": "Austin real estate agent, father, and local political advocate.",
+        "intro": "Law student, environmental advocate, and community organizer.",
     },
 }
 
@@ -198,9 +189,10 @@ def answer_question(session_id):
     question = session["questions"][question_index]
     try:
         agent = _agent(session["person_id"])
-        memory_scores = agent.memory_stream.retrieve_with_scores(question["text"], n_count=5)
+        started = time.perf_counter()
+        memory_scores = agent.memory_stream.retrieve_with_scores(question["text"], n_count=MEMORY_COUNT)
+        retrieval_ms = (time.perf_counter() - started) * 1000
         memory_notes = [memory["content"] for memory in memory_scores]
-        evidence = "\n".join(f"- {memory}" for memory in memory_notes)
         if question["kind"] == "factual":
             guidance = (
                 "Answer this factual interview question using only what the memories "
@@ -212,11 +204,16 @@ def answer_question(session_id):
                 "and explain what those documented experiences taught you. Do not invent events."
             )
         context = (
-            f"{guidance}\n\nRelevant memories retrieved for this question:\n{evidence}\n\n"
+            f"{guidance}\n\n"
             "Think through the memories privately, then give a concise first-person answer. "
             "Do not reveal private reasoning or mention this context."
         )
-        response = agent.utterance([["Interviewer", question["text"]]], context=context)
+        # The model sees exactly the memories shown on the page.
+        trace = {}
+        started = time.perf_counter()
+        response = agent.utterance([["Interviewer", question["text"]]], context=context,
+                                   memories=memory_notes, trace=trace)
+        generation_ms = (time.perf_counter() - started) * 1000
         if not isinstance(response, str) or not response.strip():
             raise RuntimeError("The agent returned an empty answer.")
     except Exception as exc:
@@ -239,6 +236,16 @@ def answer_question(session_id):
              for key, value in memory.items()}
             for memory in memory_scores
         ],
+        "trace": {
+            "model": LLM_VERS,
+            "embedding_model": EMBEDDING_MODEL,
+            "memories_searched": len(agent.memory_stream.seq_nodes),
+            "memories_used": len(memory_notes),
+            "retrieval_ms": round(retrieval_ms),
+            "generation_ms": round(generation_ms),
+            "prompt": trace.get("prompt"),
+            "raw_reply": trace.get("raw_reply"),
+        },
         "answered_at": datetime.now(timezone.utc).isoformat(),
     }
     session["answers"].append(answer)

@@ -91,4 +91,4 @@ class Scratch:
 
 
   def get_fullname(self):
-    return f"{self.first_name} {self.last_name}" 
+    return " ".join(part for part in (self.first_name, self.last_name) if part)

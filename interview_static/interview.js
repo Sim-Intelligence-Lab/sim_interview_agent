@@ -20,14 +20,70 @@ function setBusy(busy) {
   state.busy = busy;
   ["ask", "next", "skip", "random"].forEach((id) => { $(id).disabled = busy; });
   $("ask").textContent = busy ? "thinking…" : "ask this question";
-  $("interview").classList.toggle("thinking", busy);
   $("question-list").classList.toggle("locked", busy);
+  if (busy) setMood("thinking");
+  else if (!delivery) setMood("listening");
+}
+
+// ---------- Portrait: thinking and speaking ----------
+
+const portraitCache = {};
+let delivery = null;
+
+async function loadPortrait(person) {
+  const portrait = $("subject-avatar");
+  portrait.setAttribute("aria-label", `${person.name}, pixel portrait`);
+  try {
+    if (!portraitCache[person.id]) portraitCache[person.id] = await (await fetch(person.avatar_url)).text();
+    portrait.innerHTML = portraitCache[person.id];
+  } catch {
+    portrait.replaceChildren(Object.assign(document.createElement("img"), { src: person.avatar_url, alt: "" }));
+  }
+}
+
+function setMood(mood) {
+  $("interview").classList.toggle("thinking", mood === "thinking");
+  $("interview").classList.toggle("speaking", mood === "speaking");
+  $("speaker-status").textContent = { thinking: "thinking…", speaking: "speaking…" }[mood] || "listening";
+}
+
+// Types the answer into `element` while her mouth moves, then calls onDone.
+function deliver(element, text, onDone) {
+  stopDelivery();
+  const run = { shown: 0, done: false };
+  delivery = run;
+  setMood("speaking");
+  run.finish = () => {
+    if (run.done) return;
+    run.done = true;
+    clearInterval(run.timer);
+    element.textContent = text;
+    if (delivery === run) {
+      delivery = null;
+      setMood(state.busy ? "thinking" : "listening");
+    }
+    onDone?.();
+  };
+  // About a natural speaking pace: one word every ~180 ms.
+  const words = text.split(/(?<=\s)/);
+  let count = 0;
+  run.timer = setInterval(() => {
+    count += 1;
+    element.textContent = words.slice(0, count).join("");
+    if (count >= words.length) run.finish();
+  }, 180);
+}
+
+function stopDelivery() {
+  delivery?.finish();
 }
 
 // ---------- People ----------
 
 function renderPeople(people) {
   const container = $("people");
+  const counts = [...new Set(people.map((person) => person.question_count))];
+  $("question-total").textContent = counts.length === 1 ? `${counts[0]} questions` : "";
   container.replaceChildren();
   people.forEach((person) => {
     const button = document.createElement("button");
@@ -48,6 +104,7 @@ function renderPeople(people) {
     });
     container.append(button);
   });
+  if (people.length === 1) container.querySelector(".person-option").click();
 }
 
 // ---------- Progress and question list ----------
@@ -178,7 +235,83 @@ function renderMemory(memory, rank) {
   return item;
 }
 
-function renderAnswer(answer) {
+const firstName = () => state.person.name.split(" ")[0];
+const seconds = (ms) => (ms >= 1000 ? `${(ms / 1000).toFixed(1)} s` : `${ms} ms`);
+
+function resetTrace() {
+  $("trace-title").textContent = `how ${firstName().toLowerCase()} answered`;
+  $("trace-question").textContent = "";
+  $("trace-body").innerHTML = '<p class="trace-empty"></p>';
+  $("trace-body").firstChild.textContent = `Ask a question to see each step ${firstName()} took to answer it.`;
+}
+
+function traceStep(number, title, detail, extra) {
+  const step = document.createElement("li");
+  step.className = "trace-step";
+  const marker = document.createElement("span");
+  marker.className = "trace-number";
+  marker.textContent = number;
+  const body = document.createElement("div");
+  const heading = document.createElement("h4");
+  heading.textContent = title;
+  const text = document.createElement("p");
+  text.textContent = detail;
+  body.append(heading, text);
+  if (extra) body.append(extra);
+  step.append(marker, body);
+  return step;
+}
+
+function codeBlock(label, content) {
+  const details = document.createElement("details");
+  details.className = "trace-code";
+  const summary = document.createElement("summary");
+  summary.textContent = label;
+  const pre = document.createElement("pre");
+  pre.textContent = content || "(not recorded)";
+  details.append(summary, pre);
+  return details;
+}
+
+function renderTrace(answer) {
+  const trace = answer.trace;
+  $("trace-question").textContent = `question ${String(answer.question_index + 1).padStart(2, "0")}`;
+  document.querySelectorAll(".answer-card").forEach((card) => {
+    card.classList.toggle("traced", Number(card.dataset.index) === answer.question_index);
+  });
+  const body = $("trace-body");
+  body.replaceChildren();
+  if (!trace) {
+    resetTrace();
+    body.firstChild.textContent = "No step details were saved for this answer.";
+    return;
+  }
+  const best = answer.memory_scores?.[0];
+  const steps = document.createElement("ol");
+  steps.className = "trace-steps";
+  steps.append(
+    traceStep(1, "Searched her memories",
+      `Scored all ${trace.memories_searched} memories against the question in ${seconds(trace.retrieval_ms)} `
+      + `(embeddings: ${trace.embedding_model}) and kept the top ${trace.memories_used}.`
+      + (best ? ` Best match scored ${best.score.toFixed(2)} / ${best.max_score}.` : "")),
+    traceStep(2, "Built the prompt",
+      `Combined ${firstName()}'s self-description, speech pattern, those ${trace.memories_used} memories, `
+      + `the question, and the answering rules (${answer.kind} question).`,
+      codeBlock("show full prompt", trace.prompt)),
+    traceStep(3, "Model replied",
+      `${trace.model} returned a JSON reply in ${seconds(trace.generation_ms)}.`,
+      codeBlock("show raw reply", trace.raw_reply)),
+    traceStep(4, "Final answer",
+      "The reply text was pulled out of the JSON and shown in the chat."),
+  );
+  const final = document.createElement("blockquote");
+  final.className = "trace-final";
+  final.textContent = answer.response;
+  steps.lastElementChild.querySelector("div").append(final);
+  body.append(steps);
+}
+
+function renderAnswer(answer, { animate = false } = {}) {
   const bubble = document.createElement("article");
   bubble.className = "answer-card";
   const question = document.createElement("p");
@@ -206,10 +339,28 @@ function renderAnswer(answer) {
   const scored = answer.memory_scores || answer.supporting_memories.map((content) => ({ content }));
   scored.forEach((memory, rank) => list.append(renderMemory(memory, rank)));
   details.append(summary, list);
-  bubble.append(question, label, text, details);
+  bubble.dataset.index = answer.question_index;
+  const how = document.createElement("button");
+  how.type = "button";
+  how.className = "trace-link";
+  how.textContent = "see how this answer was made ↓";
+  how.addEventListener("click", () => {
+    renderTrace(answer);
+    document.querySelector(".trace-window").scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+  bubble.append(question, label, text, details, how);
+  if (animate) {
+    details.hidden = true;
+    how.hidden = true;
+    deliver(text, answer.response, () => {
+      details.hidden = false;
+      how.hidden = false;
+    });
+  }
   $("answer-area").querySelector(".empty-state")?.remove();
   $("answer-area").append(bubble);
   bubble.scrollIntoView({ behavior: "smooth", block: "start" });
+  renderTrace(answer);
 }
 
 // ---------- Actions ----------
@@ -227,10 +378,11 @@ async function startInterview() {
     state.awaitingNext = false;
     $("answer-area").replaceChildren();
     $("subject-name").textContent = session.person_name;
-    $("subject-avatar").src = state.person.avatar_url;
-    $("subject-avatar").alt = `${session.person_name} illustrated avatar`;
+    await loadPortrait(state.person);
+    setMood("listening");
     $("subject-intro").textContent = state.person.intro;
     buildQuestionList();
+    resetTrace();
     applyProgress(session);
     show("setup", false);
     show("interview", true);
@@ -261,8 +413,9 @@ const post = (path, body = {}) => api(`/api/sessions/${state.sessionId}/${path}`
 
 function askQuestion() {
   return run(async () => {
+    stopDelivery();
     const result = await post("answer", { question_index: state.index });
-    renderAnswer(result.answer);
+    renderAnswer(result.answer, { animate: true });
     applyProgress(result);
     if (state.complete) return renderComplete();
     state.awaitingNext = true;
@@ -275,6 +428,7 @@ function askQuestion() {
 }
 
 function skipQuestion() {
+  stopDelivery();
   return run(async () => {
     applyProgress(await post("skip"));
     state.complete ? renderComplete() : renderQuestion();
@@ -284,6 +438,7 @@ function skipQuestion() {
 function goToQuestion(index) {
   if (state.status[index] === "answered" || state.busy) return;
   if (index === state.index && !state.awaitingNext && !state.complete) return;
+  stopDelivery();
   return run(async () => {
     applyProgress(await post("select", { question_index: index }));
     renderQuestion();
@@ -302,6 +457,7 @@ function randomQuestion() {
 
 function backToPeople() {
   if (state.busy) return;
+  stopDelivery();
   const started = state.status.some((status) => status !== "pending");
   if (state.sessionId && !state.complete && started
       && !window.confirm("Leave this interview? Answers so far are saved, but you can't resume it.")) return;
@@ -309,8 +465,10 @@ function backToPeople() {
   state.sessionId = null;
   state.complete = false;
   state.status = [];
-  document.querySelectorAll(".person-option").forEach((item) => item.classList.remove("selected"));
+  const options = document.querySelectorAll(".person-option");
+  options.forEach((item) => item.classList.remove("selected"));
   $("start").disabled = true;
+  if (options.length === 1) options[0].click();
   show("interview", false);
   show("setup", true);
   window.scrollTo({ top: 0, behavior: "smooth" });
@@ -324,6 +482,7 @@ $("skip").addEventListener("click", skipQuestion);
 $("random").addEventListener("click", randomQuestion);
 $("next").addEventListener("click", () => {
   if (state.busy) return;
+  stopDelivery();
   renderQuestion();
   window.scrollTo({ top: 0, behavior: "smooth" });
 });

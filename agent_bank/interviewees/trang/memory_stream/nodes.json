@@ -718,5 +718,104 @@
     "created": 0,
     "last_retrieved": 0,
     "pointer_id": null
+  },
+  {
+    "node_id": 80,
+    "node_type": "observation",
+    "content": "Reviewing environmental regulations at her nonprofit made Trang realize that many of the fights she cared about were won or lost in legal language, which first planted the idea of going to law school.",
+    "importance": 85,
+    "created": 0,
+    "last_retrieved": 0,
+    "pointer_id": null
+  },
+  {
+    "node_id": 81,
+    "node_type": "observation",
+    "content": "After losing her first bid for city council, Trang decided to apply to law school, believing a law degree would make her a more effective advocate and a stronger future candidate.",
+    "importance": 50,
+    "created": 0,
+    "last_retrieved": 0,
+    "pointer_id": null
+  },
+  {
+    "node_id": 82,
+    "node_type": "observation",
+    "content": "Trang was accepted into law school and enrolled as a first-year law student focusing on environmental law, while still volunteering with her nonprofit on weekends.",
+    "importance": 65,
+    "created": 0,
+    "last_retrieved": 0,
+    "pointer_id": null
+  },
+  {
+    "node_id": 83,
+    "node_type": "observation",
+    "content": "Her first semester of law school was overwhelming; Trang struggled with the heavy case reading in Civil Procedure and Contracts and briefly questioned whether she had made the right choice.",
+    "importance": 45,
+    "created": 0,
+    "last_retrieved": 0,
+    "pointer_id": null
+  },
+  {
+    "node_id": 84,
+    "node_type": "observation",
+    "content": "Trang joined her law school's Environmental Law Clinic, where she helped draft public comments opposing a permit for a factory accused of polluting a nearby river.",
+    "importance": 30,
+    "created": 0,
+    "last_retrieved": 0,
+    "pointer_id": null
+  },
+  {
+    "node_id": 85,
+    "node_type": "observation",
+    "content": "In her first moot court competition, Trang argued a Clean Water Act case; her team reached the semifinals, and she discovered how much she loves oral argument.",
+    "importance": 45,
+    "created": 0,
+    "last_retrieved": 0,
+    "pointer_id": null
+  },
+  {
+    "node_id": 86,
+    "node_type": "observation",
+    "content": "Trang's partner and her mother helped her adjust to law school, with her partner taking over cooking on weeknights during her final exams.",
+    "importance": 45,
+    "created": 0,
+    "last_retrieved": 0,
+    "pointer_id": null
+  },
+  {
+    "node_id": 87,
+    "node_type": "observation",
+    "content": "Trang landed a summer internship with a public-interest environmental law organization, researching cases about pollution in low-income neighborhoods.",
+    "importance": 45,
+    "created": 0,
+    "last_retrieved": 0,
+    "pointer_id": null
+  },
+  {
+    "node_id": 88,
+    "node_type": "observation",
+    "content": "Trang spent a late night in the law library outlining her Torts notes before an exam, fueled by tea and a bag of trail mix.",
+    "importance": 10,
+    "created": 0,
+    "last_retrieved": 0,
+    "pointer_id": null
+  },
+  {
+    "node_id": 89,
+    "node_type": "observation",
+    "content": "Trang formed a study group with three law school classmates who meet every Sunday afternoon to review cases over coffee.",
+    "importance": 10,
+    "created": 0,
+    "last_retrieved": 0,
+    "pointer_id": null
+  },
+  {
+    "node_id": 90,
+    "node_type": "observation",
+    "content": "Trang now plans to use her law degree to represent communities harmed by pollution and to run for local office again after graduation.",
+    "importance": 75,
+    "created": 0,
+    "last_retrieved": 0,
+    "pointer_id": null
   }
 ]

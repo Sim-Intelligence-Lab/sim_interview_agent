@@ -125,6 +125,7 @@ button, a { font: inherit; }
   margin-bottom: 24px;
 }
 .people-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 28px; }
+.people-grid:has(> :only-child) { max-width: 560px; margin: 0 auto; }
 .person-option {
   text-align: left;
   padding: 0;
@@ -449,3 +450,145 @@ button, a { font: inherit; }
 .question-item.skipped:not(.current) .question-preview { text-decoration: line-through; text-decoration-color: #14020640; }
 .question-item.answered { cursor: default; }
 .control-buttons { flex-wrap: wrap; justify-content: flex-end; }
+
+/* "How Trang answered" panel below the chat window */
+.call-window { grid-column: 1; grid-row: 1; }
+.side-window { grid-column: 2; grid-row: 1 / span 2; }
+.trace-window { grid-column: 1; grid-row: 2; }
+.titlebar > #trace-title { flex: 1; }
+.trace-body { padding: 22px 28px 26px; }
+.trace-empty { margin: 0; color: var(--muted); font: 20px var(--serif); }
+.trace-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+.trace-step { display: grid; grid-template-columns: 34px 1fr; gap: 14px; position: relative; padding-bottom: 20px; }
+.trace-step:last-child { padding-bottom: 0; }
+.trace-step:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  left: 16px;
+  top: 34px;
+  bottom: 0;
+  border-left: 1px dashed var(--black);
+}
+.trace-number {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  font: 14px var(--pixel);
+  background: var(--frost);
+  border: 1px solid var(--black);
+  border-radius: 50%;
+  box-shadow: 2px 2px 0 0 var(--black);
+}
+.trace-step:last-child .trace-number { background: var(--green); }
+.trace-step h4 { margin: 5px 0 2px; font-size: 16px; font-weight: 600; color: var(--black); }
+.trace-step p { margin: 0; color: var(--ink); font-size: 14px; }
+.trace-code { margin-top: 8px; }
+.trace-code summary { cursor: pointer; font: 11px var(--pixel); text-transform: uppercase; color: var(--muted); }
+.trace-code pre {
+  margin: 8px 0 0;
+  max-height: 320px;
+  overflow: auto;
+  padding: 12px 14px;
+  background: var(--black);
+  color: #f7f4ef;
+  border-radius: 10px;
+  font: 12px/1.5 ui-monospace, Menlo, monospace;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.trace-final {
+  margin: 10px 0 0;
+  padding: 10px 14px;
+  background: #d9fbe0;
+  border: 1px solid var(--black);
+  border-radius: 10px;
+  font-size: 14px;
+}
+.trace-link {
+  align-self: flex-start;
+  background: none;
+  border: 0;
+  padding: 0;
+  font: 11px var(--pixel);
+  text-transform: uppercase;
+  color: var(--muted);
+  text-decoration: underline;
+  cursor: pointer;
+}
+.trace-link:hover { color: var(--black); }
+.answer-card.traced .answer-text { outline: 2px solid var(--green); outline-offset: 2px; }
+
+@media (max-width: 900px) {
+  .call-window, .side-window, .trace-window { grid-column: 1; grid-row: auto; }
+}
+@media (max-width: 600px) {
+  .trace-body { padding: 18px 16px; }
+}
+
+/* Animated portrait: blink always, glance up while thinking, talk while speaking */
+.portrait-wrap { position: relative; }
+.portrait svg { display: block; width: 100%; height: 100%; }
+.portrait .av-head, .portrait .av-eyes, .portrait .av-brow-left, .portrait .av-brow-right { transform-box: view-box; transition: transform .25s ease; }
+.portrait .av-eyes { transform-origin: 16px 14px; animation: blink 4.5s infinite; }
+@keyframes blink { 0%, 95%, 100% { transform: scaleY(1); } 97% { transform: scaleY(.1); } }
+.portrait .av-head { transform-origin: 16px 22px; }
+
+.call.thinking .portrait .av-eyes { animation: none; transform: translate(1px, -1px); }
+.call.thinking .portrait .av-brow-left { transform: translateY(-1px); }
+.call.thinking .portrait .av-head { animation: ponder 2.4s ease-in-out infinite; }
+.call.thinking .portrait .av-mouth-smile { opacity: 0; }
+.call.thinking .portrait .av-mouth-hmm { opacity: 1; }
+@keyframes ponder { 0%, 100% { transform: rotate(-3deg); } 50% { transform: rotate(-1deg) translateY(-.3px); } }
+
+.call.speaking .portrait .av-head { animation: nod 1.6s ease-in-out infinite; }
+.call.speaking .portrait .av-mouth-smile { opacity: 0; }
+.call.speaking .portrait .av-mouth-half { animation: mouth-half .5s steps(1) infinite; }
+.call.speaking .portrait .av-mouth-open { animation: mouth-open .5s steps(1) infinite; }
+@keyframes mouth-half { 0% { opacity: 1; } 25% { opacity: 0; } 50% { opacity: 0; } 75% { opacity: 1; } }
+@keyframes mouth-open { 0% { opacity: 0; } 25% { opacity: 1; } 50% { opacity: 0; } 75% { opacity: 0; } }
+@keyframes nod { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(.4px); } }
+
+/* Thought bubble beside the portrait */
+.thought {
+  position: absolute;
+  top: -6px;
+  right: -26px;
+  display: flex;
+  gap: 4px;
+  padding: 7px 9px;
+  background: #fff;
+  border: 1px solid var(--black);
+  border-radius: 999px;
+  box-shadow: 2px 2px 0 0 var(--black);
+  opacity: 0;
+  transform: scale(.6);
+  transform-origin: bottom left;
+  transition: opacity .2s, transform .2s;
+}
+.thought::after {
+  content: "";
+  position: absolute;
+  left: 2px;
+  bottom: -9px;
+  width: 8px;
+  height: 8px;
+  background: #fff;
+  border: 1px solid var(--black);
+  border-radius: 50%;
+}
+.thought i { width: 6px; height: 6px; background: var(--black); border-radius: 50%; animation: dot 1.2s infinite; }
+.thought i:nth-child(2) { animation-delay: .15s; }
+.thought i:nth-child(3) { animation-delay: .3s; }
+@keyframes dot { 0%, 60%, 100% { opacity: .25; transform: translateY(0); } 30% { opacity: 1; transform: translateY(-2px); } }
+.call.thinking .thought { opacity: 1; transform: scale(1); }
+
+.speaker-status { margin: -2px 0 0; padding: 1px 10px; border: 1px solid var(--black); border-radius: 999px; background: var(--panel); font-size: 11px; }
+.call.thinking .speaker-status { background: var(--frost); }
+.call.speaking .speaker-status { background: #d9fbe0; }
+.call.speaking .portrait-frame { box-shadow: 0 0 0 6px #b1f2be, var(--shadow-sm); }
+
+@media (prefers-reduced-motion: reduce) {
+  .portrait .av-eyes, .call.thinking .portrait .av-head, .call.speaking .portrait .av-head, .thought i { animation: none; }
+}
+.speaker .speaker-status { font: 11px var(--pixel); text-transform: uppercase; letter-spacing: .02em; }

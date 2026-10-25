@@ -24,12 +24,12 @@
     <section id="setup">
       <div class="hero">
         <h1>The <em>human</em> side<br>of agent memory</h1>
-        <p class="hero-copy">Pick a person, ask the prepared questions, and hear answers built only from what their agent remembers.</p>
+        <p class="hero-copy">Ask the prepared questions and hear answers built only from what Trang remembers.</p>
       </div>
 
       <div class="section-head">
-        <p class="pixel label">Choose who to interview</p>
-        <span class="pixel label muted">15 questions each</span>
+        <p class="pixel label">Your interviewee</p>
+        <span id="question-total" class="pixel label muted"></span>
       </div>
       <div id="people" class="people-grid" aria-live="polite"></div>
       <div class="start-row">
@@ -43,12 +43,16 @@
         <div class="titlebar">
           <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
           <span class="pixel">in conversation</span>
-          <button id="back" class="back-link pixel" type="button">← all people</button>
+          <button id="back" class="back-link pixel" type="button">← back</button>
           <span class="live pixel"><i></i> live</span>
         </div>
         <div class="stage">
           <div class="speaker">
-            <div class="portrait-frame"><img id="subject-avatar" class="portrait" alt=""></div>
+            <div class="portrait-wrap">
+              <div class="portrait-frame"><div id="subject-avatar" class="portrait" role="img"></div></div>
+              <div class="thought" aria-hidden="true"><i></i><i></i><i></i></div>
+            </div>
+            <p id="speaker-status" class="speaker-status pixel" aria-live="polite">listening</p>
             <div>
               <h2 id="subject-name"></h2>
               <p id="subject-intro" class="muted"></p>
@@ -82,11 +86,20 @@
         <p id="interview-error" class="error" role="alert"></p>
       </div>
 
+      <section class="window trace-window" aria-live="polite">
+        <div class="titlebar">
+          <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span class="pixel" id="trace-title">how trang answered</span>
+          <span class="pixel muted" id="trace-question"></span>
+        </div>
+        <div id="trace-body" class="trace-body"></div>
+      </section>
+
       <aside class="window side-window">
         <div class="titlebar">
           <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
           <span class="pixel">questions</span>
-          <span id="progress-label" class="pixel">0 / 15</span>
+          <span id="progress-label" class="pixel"></span>
         </div>
         <div class="progress-track"><div id="progress-bar"></div></div>
         <ol id="question-list" class="question-list"></ol>

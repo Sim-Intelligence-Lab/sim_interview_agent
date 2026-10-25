@@ -193,7 +193,9 @@ class GenerativeAgent:
 
   def utterance(self, 
                 curr_dialogue: List[List[str]], 
-                context: str = "") -> str:
+                context: str = "",
+                memories: Optional[List[str]] = None,
+                trace: Optional[Dict] = None) -> str:
     """
     Given a dialogue of the form, 
       [["Agent 1": "Content..."],
@@ -206,7 +208,7 @@ class GenerativeAgent:
     Returns: 
       None
     """
-    ret = utterance(self, curr_dialogue, context)
+    ret = utterance(self, curr_dialogue, context, memories, trace)
     return ret 
 
 

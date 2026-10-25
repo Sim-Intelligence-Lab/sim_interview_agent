@@ -5,7 +5,8 @@ from simulation_engine.gpt_structure import *
 from simulation_engine.llm_json_parser import *
 
 
-def _utterance_agent_desc(agent: 'GenerativeAgent', anchor: str) -> str: 
+def _utterance_agent_desc(agent: 'GenerativeAgent', anchor: str,
+                          memories: List[str] = None) -> str: 
   """
   Generate a description of the agent based on its attributes and relevant 
   memories.
@@ -25,12 +26,14 @@ def _utterance_agent_desc(agent: 'GenerativeAgent', anchor: str) -> str:
   :param anchor: A string used to retrieve relevant memories
   :return: A string containing the agent's description and relevant memories
   """
-  memories = agent.memory_stream.retrieve(
-    [anchor], time_step=0, n_count=10, verbose=DEBUG)[anchor]
+  if memories is None:
+    nodes = agent.memory_stream.retrieve(
+      [anchor], time_step=0, n_count=10, verbose=DEBUG)[anchor]
+    memories = [node.content for node in nodes]
   sections = [
     f"Self-description:\n{agent.scratch.self_description}",
     f"Speech pattern:\n{agent.scratch.speech_pattern}",
-    "Relevant memories:\n" + "\n".join(f"- {node.content}" for node in memories),
+    "Relevant memories:\n" + "\n".join(f"- {memory}" for memory in memories),
   ]
   return "\n\n".join(sections)
 
@@ -61,7 +64,10 @@ def run_gpt_generate_utterance(
     context: str) -> List[str]:
     return [agent_desc, context, str_dialogue]
 
+  raw_replies = []
+
   def _func_clean_up(gpt_response: str, prompt: str = "") -> str:
+    raw_replies.append(gpt_response)
     return extract_first_json_dict(gpt_response)["utterance"]
 
   def _get_fail_safe() -> None:
@@ -82,50 +88,26 @@ def run_gpt_generate_utterance(
     prompt_input, prompt_lib_file, gpt_version, 1, fail_safe, 
     _func_clean_up, verbose)
 
-  return output, [output, prompt, prompt_input, fail_safe]
+  raw_reply = raw_replies[-1] if raw_replies else None
+  return output, [output, prompt, prompt_input, fail_safe, raw_reply]
 
 
 def utterance(agent: 'GenerativeAgent', 
               curr_dialogue: List[List[str]], 
-              context: str) -> str:
+              context: str,
+              memories: List[str] = None,
+              trace: Dict[str, Any] = None) -> str:
   """Generate an utterance for the agent based on the current dialogue and 
-     context."""
+     context. Pass `memories` to use those instead of retrieving again, and a
+     `trace` dict to receive the exact prompt and the model's raw reply."""
   str_dialogue = "".join(f"[{row[0]}]: {row[1]}\n" for row in curr_dialogue)
   str_dialogue += f"[{agent.scratch.get_fullname()}]: [Fill in]\n"
 
   anchor = curr_dialogue[-1][1]
-  agent_desc = _utterance_agent_desc(agent, anchor)
-  return run_gpt_generate_utterance(
-           agent_desc, str_dialogue, context, "1", LLM_VERS)[0]
-
-
-
-  
-
-
-
-
-
-  
-
-
-
-
-
-  
-
-
-
-
-  
-
-
-
-
-
-  
-
-
-
-
-
+  agent_desc = _utterance_agent_desc(agent, anchor, memories)
+  output, details = run_gpt_generate_utterance(
+    agent_desc, str_dialogue, context, "1", LLM_VERS)
+  if trace is not None:
+    trace["prompt"] = details[1]
+    trace["raw_reply"] = details[4]
+  return output

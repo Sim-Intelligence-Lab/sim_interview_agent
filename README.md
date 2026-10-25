@@ -1,7 +1,6 @@
 # Interview Studio
 
-A Flask interface for interviewing the Trang Thai and Raju Nekadi
-generative agents. It uses the AgentBank memory stream to retrieve relevant
+A Flask interface for interviewing Trang, a generative agent. It uses the AgentBank memory stream to retrieve relevant
 experiences, asks the prepared factual and reflective questions, and saves each
 answer with the supporting memories used to produce it.
 
@@ -23,8 +22,9 @@ embedding model. You can swap the chat model with `LLM_MODEL`.
 
 ## Interviews
 
-Choose Trang or Raju, then ask each of the 10 factual and 5 reflective
-questions in order. Answers and their retrieved memory notes are saved after
+Start an interview with Trang, an environmental advocate who is now a law
+student, and work through the 12 factual and 6 reflective questions. You can skip a question, jump to a random one, or click any question
+in the list. Answers and their retrieved memory notes are saved after
 every question in `interviews/`. At the end, download
 the transcript as JSON or CSV. These generated interview records are kept local
 and are excluded from Git.
@@ -35,8 +35,8 @@ and are excluded from Git.
 interview_app.py        Flask app and API
 interview_templates/    Page HTML
 interview_static/       CSS, JS, and avatars
-questions/              Interview questions for each person
-agent_bank/interviewees/ Saved agent memories and embeddings
+questions/              Interview questions
+agent_bank/interviewees/ Trang's saved memories and embeddings
 generative_agent/       Memory retrieval and answer generation
 simulation_engine/      Settings, Ollama client, and prompt templates
 interviews/             Saved transcripts (local only, not in Git)
