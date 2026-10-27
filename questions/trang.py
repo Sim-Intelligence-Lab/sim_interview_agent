@@ -8,7 +8,9 @@ factual_questions = [
     "What motivated you to switch from corporate consulting to a nonprofit sector?",
     "What was your experience when you lost your first bid for political office?",
     "What initiative did you help pass to address urban pollution through public transportation?",
-    "How did your relationship with your partner help you during a low point in your career?"
+    "How did your relationship with your partner help you during a low point in your career?",
+    "Why did you decide to go to law school?",
+    "What have you worked on in your law school's Environmental Law Clinic?"
 ]
 
 reflective_questions = [
@@ -16,5 +18,6 @@ reflective_questions = [
     "How do you navigate the tension between your public persona as a passionate activist and your private struggles with burnout and grief?",
     "In what ways has your identity as both an environmental advocate and a social justice activist influenced your approach to creating meaningful change in your community?",
     "How do your personal setbacks, such as losing her first bid for office, contribute to your resilience and evolving sense of purpose?",
-    "How do you balance your deep sense of responsibility for environmental and social justice with the emotional toll that your work often takes on your personal well-being?"
+    "How do you balance your deep sense of responsibility for environmental and social justice with the emotional toll that your work often takes on your personal well-being?",
+    "How has studying law changed the way you think about environmental activism?"
 ]

@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" shape-rendering="crispEdges" role="img" aria-labelledby="trang-title">
+  <title id="trang-title">Trang, pixel portrait</title>
+  <defs><clipPath id="trang-clip"><circle cx="16" cy="16" r="15.6"/></clipPath></defs>
+  <g clip-path="url(#trang-clip)">
+    <!-- leafy backdrop -->
+    <rect width="32" height="32" fill="#dce8d5"/>
+    <g fill="#b9cda9"><rect x="2" y="5" width="3" height="3"/><rect x="27" y="5" width="3" height="3"/><rect x="3" y="22" width="2" height="2"/><rect x="27" y="20" width="3" height="3"/></g>
+    <g fill="#78976d"><rect x="2" y="11" width="2" height="5"/><rect x="4" y="8" width="2" height="5"/><rect x="3" y="15" width="2" height="4"/><rect x="27" y="9" width="2" height="4"/><rect x="29" y="12" width="2" height="6"/><rect x="27" y="16" width="2" height="4"/></g>
+
+    <!-- body: purple shirt, collar, gold pin -->
+    <g class="av-body">
+      <g fill="#7b4fb0"><rect x="9" y="23" width="14" height="1"/><rect x="7" y="24" width="18" height="1"/><rect x="6" y="25" width="20" height="7"/></g>
+      <g fill="#5f3a8c"><rect x="6" y="27" width="3" height="5"/><rect x="23" y="27" width="3" height="5"/></g>
+      <g fill="#cf966f"><rect x="14" y="23" width="4" height="1"/><rect x="15" y="24" width="2" height="1"/></g>
+      <g fill="#f2c14e"><rect x="19" y="26" width="2" height="1"/><rect x="20" y="25" width="2" height="1"/></g>
+      <rect x="19" y="27" width="1" height="1" fill="#d99a2b"/>
+    </g>
+
+    <g class="av-head">
+      <!-- long hair behind the face -->
+      <g fill="#0f0d0d"><rect x="12" y="5" width="8" height="1"/><rect x="10" y="6" width="12" height="1"/><rect x="9" y="7" width="14" height="16"/></g>
+      <!-- neck and face -->
+      <rect x="14" y="20" width="4" height="3" fill="#cf966f"/>
+      <g fill="#e6ae86"><rect x="11" y="9" width="10" height="10"/><rect x="12" y="19" width="8" height="1"/><rect x="13" y="20" width="6" height="1"/></g>
+      <!-- side-swept bangs -->
+      <g fill="#0f0d0d"><rect x="11" y="8" width="10" height="1"/><rect x="11" y="9" width="3" height="1"/><rect x="16" y="9" width="5" height="1"/><rect x="11" y="10" width="1" height="1"/><rect x="18" y="10" width="3" height="1"/><rect x="20" y="11" width="1" height="1"/></g>
+      <!-- hair highlight -->
+      <rect x="14" y="6" width="3" height="1" fill="#3a3540"/>
+
+      <g class="av-brow-left"><rect x="12" y="11" width="3" height="1" fill="#1c1718"/></g>
+      <g class="av-brow-right"><rect x="17" y="11" width="3" height="1" fill="#1c1718"/></g>
+      <g class="av-eyes">
+        <g fill="#2a1d1b"><rect x="12" y="13" width="2" height="2"/><rect x="18" y="13" width="2" height="2"/></g>
+        <g fill="#fffaf2"><rect x="12" y="13" width="1" height="1"/><rect x="18" y="13" width="1" height="1"/></g>
+      </g>
+      <g fill="#ef8f80" opacity=".7"><rect x="12" y="16" width="2" height="1"/><rect x="18" y="16" width="2" height="1"/></g>
+      <rect x="15" y="15" width="2" height="1" fill="#c98762"/>
+
+      <!-- mouths: the page swaps these to animate thinking and speaking -->
+      <g class="av-mouth av-mouth-smile" fill="#a8473f"><rect x="14" y="18" width="4" height="1"/><rect x="13" y="17" width="1" height="1"/><rect x="18" y="17" width="1" height="1"/></g>
+      <g class="av-mouth av-mouth-hmm" opacity="0"><rect x="15" y="18" width="3" height="1" fill="#a8473f"/></g>
+      <g class="av-mouth av-mouth-half" opacity="0"><rect x="14" y="18" width="4" height="1" fill="#5a1f22"/></g>
+      <g class="av-mouth av-mouth-open" opacity="0"><rect x="14" y="17" width="4" height="2" fill="#5a1f22"/><rect x="15" y="18" width="2" height="1" fill="#d96c6a"/></g>
+
+      <!-- hair falling over the shoulders -->
+      <g fill="#0f0d0d"><rect x="9" y="23" width="2" height="4"/><rect x="21" y="23" width="2" height="4"/></g>
+    </g>
+  </g>
+  <circle cx="16" cy="16" r="15.5" fill="none" stroke="#fffefa" stroke-width=".8"/>
+</svg>
